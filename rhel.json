@@ -1,0 +1,109 @@
+{
+"provisioners": [
+  {
+    "type": "shell",
+    "scripts": [
+      "scripts/base.sh",
+      "scripts/disableipv6.sh",
+      "scripts/epel.sh",
+      "scripts/aws-cloud-init.sh",
+      "scripts/bashrc.sh",
+      "scripts/root.sh",
+      "scripts/cleanup.sh",
+      "scripts/zerodisk.sh"
+    ],
+    "only": ["rhel-6-ami"]
+  },
+  {
+    "type": "shell",
+    "scripts": [
+      "scripts/base.sh",
+      "scripts/disableipv6.sh",
+      "scripts/epel.sh",
+      "scripts/bashrc.sh",
+      "scripts/root.sh",
+      "scripts/cleanup.sh",
+      "scripts/zerodisk.sh"
+    ],
+    "only": ["rhel-6-ami","rhel-6-vbox","rhel-6-vmware"]
+  }
+],
+"variables": {
+  "aws_access_key": "",
+  "aws_secret_key": ""
+},
+"builders": [
+  {
+    "name": "rhel-6-vbox",
+    "type": "virtualbox-iso",
+    "boot_command": [
+      "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+    ],
+    "boot_wait": "10s",
+    "disk_size": 10140,
+    "guest_os_type": "RedHat_64",
+    "http_directory": "http",
+    "iso_checksum": "eb3c8be6ab668e6d83a118323a789e6c",
+    "iso_checksum_type": "md5",
+    "iso_url": "../packer-isos/rhel-6.6-x86_64.iso",
+    "output_directory": "img_rhel_6_virtualbox",
+    "ssh_username": "packer",
+    "ssh_password": "packer",
+    "ssh_port": 22,
+    "ssh_wait_timeout": "10000s",
+    "shutdown_command": "echo '/sbin/halt -h -p' > shutdown.sh; echo 'packer'|sudo -S sh 'shutdown.sh'",
+    "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+    "virtualbox_version_file": ".vbox_version",
+    "vboxmanage": [
+      [
+        "modifyvm",
+        "{{.Name}}",
+        "--memory",
+        "480"
+      ],
+      [
+        "modifyvm",
+        "{{.Name}}",
+        "--cpus",
+        "1"
+      ]
+    ]
+  },
+  {
+    "name": "rhel-6-vmware",
+    "type": "vmware-iso",
+    "boot_command": [
+      "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+    ],
+    "boot_wait": "10s",
+    "disk_size": 10140,
+    "guest_os_type": "rhel6-64",
+    "http_directory": "http",
+    "iso_checksum": "eb3c8be6ab668e6d83a118323a789e6c",
+    "iso_checksum_type": "md5",
+    "iso_url": "../packer-isos/rhel-6.6-x86_64.iso",
+    "output_directory": "img_rhel_6_vmware",
+    "ssh_username": "packer",
+    "ssh_password": "packer",
+    "ssh_port": 22,
+    "ssh_wait_timeout": "10000s",
+    "shutdown_command": "echo '/sbin/halt -h -p' > shutdown.sh; echo 'packer'|sudo -S sh 'shutdown.sh'",
+    "vmx_data": {
+      "memsize": "480",
+      "numvcpus": "1",
+      "cpuid.coresPerSocket": "1"
+    }
+  },
+  {
+    "type": "amazon-ebs",
+    "name": "rhel-6-ami",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "us-east-1",
+    "source_ami": "ami-aed06ac6",
+    "instance_type": "t1.micro",
+    "ssh_username": "ec2-user",
+    "ami_name": "packer {{timestamp}}"
+  }
+]
+}
